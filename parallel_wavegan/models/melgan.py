@@ -10,9 +10,9 @@ import logging
 import numpy as np
 import torch
 
-from parallel_wavegan.layers import CausalConv1d
-from parallel_wavegan.layers import CausalConvTranspose1d
-from parallel_wavegan.layers import ResidualStack
+from ParallelWaveGAN.parallel_wavegan.layers import CausalConv1d
+from ParallelWaveGAN.parallel_wavegan.layers import CausalConvTranspose1d
+from ParallelWaveGAN.parallel_wavegan.layers import ResidualStack
 
 
 class MelGANGenerator(torch.nn.Module):
@@ -406,11 +406,13 @@ class MelGANMultiScaleDiscriminator(torch.nn.Module):
 
         """
         outs = []
+        # loss =
         for f in self.discriminators:
-            outs += [f(x)]
+            # outs += [f(x)]
+            outs.append(f(x)[-1])
             x = self.pooling(x)
-
-        return outs
+        # print(outs[0].shape)
+        return torch.cat(outs, dim=-1)
 
     def remove_weight_norm(self):
         """Remove weight normalization module from all of the layers."""
@@ -445,3 +447,10 @@ class MelGANMultiScaleDiscriminator(torch.nn.Module):
                 logging.debug(f"Reset parameters in {m}.")
 
         self.apply(_reset_parameters)
+
+if __name__ == "__main__":
+    md = MelGANMultiScaleDiscriminator().cuda()
+
+    minp = torch.rand(8,1,256*100)
+    mout = md(minp.cuda())
+    print(mout.shape)
